@@ -55,6 +55,12 @@ func isDefaultBranch(branch string) bool {
 	if defBranch, ok := os.LookupEnv("CI_DEFAULT_BRANCH"); ok {
 		return branch == strings.TrimSpace(defBranch)
 	}
+	// GitHub doesn't have an environment variable for the
+	// default branch, so we'll assume a protected branch
+	// is good enough.
+	if _, ok := os.LookupEnv("GITHUB_REF_PROTECTED"); ok {
+		return true
+	}
 	switch branch {
 	case "default":
 		return true
@@ -68,6 +74,10 @@ func isDefaultBranch(branch string) bool {
 
 func getBranch() (branch, orgBranch string) {
 	orgBranch = strings.TrimSpace(os.Getenv("CI_COMMIT_REF_NAME"))
+	if orgBranch == "" {
+		orgBranch = strings.TrimSpace(os.Getenv("GITHUB_REF_NAME"))
+	}
+
 	if orgBranch == "" {
 		if b, _ := exec.Command(gitBin, "rev-parse", "--abbrev-ref", "HEAD").Output(); len(b) > 0 {
 			orgBranch = strings.TrimSpace(string(b))
