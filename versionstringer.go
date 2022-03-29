@@ -3,23 +3,16 @@
 package makeversion
 
 import (
-	"flag"
 	"fmt"
 	"regexp"
 	"strings"
 )
 
 var (
-	flagName    = flag.String("name", "", "write Go source with given package name")
-	flagOut     = flag.String("out", "", "file to write to (defaults to stdout)")
-	flagGit     = flag.String("git", "git", "name of Git executable")
-	flagRepo    = flag.String("repo", ".", "repositoy to examine")
-	flagRelease = flag.Bool("release", false, "output release version without build info suffix")
 	reCheckTag  = regexp.MustCompile(`^v\d+(\.\d+(\.\d+)?)?$`)
 	reOnlyWords = regexp.MustCompile(`[^\w]`)
 )
 
-// VersionStringer
 type VersionStringer struct {
 	Git Gitter      // Git
 	Env Environment // environment
