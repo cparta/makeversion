@@ -24,7 +24,7 @@ func NewDefaultGitter(gitBin string) (gitter Gitter, err error) {
 
 // GetTag returns the latest Git tag that starts with a lowercase 'v' followed by a number, otherwise an empty string.
 func (dg DefaultGitter) GetTag(repo string) string {
-	if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--match", "\"v[0-9]*\"", "--exact-match", "--abbrev=0").Output(); len(b) > 0 {
+	if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--tags", "--match", "v[0-9]*", "--exact-match", "--abbrev=0").Output(); len(b) > 0 {
 		return strings.TrimSpace(string(b))
 	}
 	return ""
