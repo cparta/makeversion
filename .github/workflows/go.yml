@@ -25,11 +25,8 @@ jobs:
       - name: git describe tags match
         run: git -C . describe --tags --match "v[0-9]*"
 
-      - name: git describe tags match exact
-        run: git -C . describe --tags --match "v[0-9]*" --exact-match
-
-      - name: git describe tags match exact abbrev
-        run: git -C . describe --tags --match "v[0-9]*" --exact-match --abbrev=0
+      - name: git describe tags match abbrev
+        run: git -C . describe --tags --match "v[0-9]*" --abbrev=0
 
       - name: Build
         run: go build -v ./...
