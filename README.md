@@ -4,3 +4,7 @@
 
 # makeversion
 Create a project version string from Git tags and build counters.
+
+```go
+//go:generate go run github.com/cparta/makeversion/cmd/mkver@latest -name packagename -out version.gen.go
+```
