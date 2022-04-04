@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -21,10 +22,22 @@ func checkDir(p string) error {
 	return err
 }
 
+func dirOrParentHasGitSubdir(s string) bool {
+	if err := checkDir(path.Join(s, ".git")); err == nil {
+		return true
+	}
+	if s = path.Dir(s); s == "/" {
+		return false
+	}
+	return dirOrParentHasGitSubdir(s)
+}
+
 func checkRepoDir(s string) (repo string, err error) {
 	if repo, err = filepath.Abs(s); err == nil {
 		if err = checkDir(repo); err == nil {
-			err = checkDir(path.Join(repo, ".git"))
+			if !dirOrParentHasGitSubdir(repo) {
+				err = errors.New("can't find .git directory")
+			}
 		}
 	}
 	return
