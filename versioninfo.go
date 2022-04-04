@@ -18,8 +18,8 @@ type VersionInfo struct {
 
 // Render returns either the Version string followed by a newline,
 // or, if the pkgName is not an empty string, a small piece of
-// Go code defining a global variable named "Version" with
-// the contents of Version.
+// Go code defining global variables named "PkgName" and "PkgVersion"
+// with the given pkgName and the contents of Version.
 // If the pkgName is given but isn't a valid Go identifier,
 // an error is returned.
 func (vi *VersionInfo) Render(pkgName string) (string, error) {
@@ -38,7 +38,7 @@ func (vi *VersionInfo) Render(pkgName string) (string, error) {
 package %s
 
 const PkgName = %s
-const Version = %s
+const PkgVersion = %s
 `,
 		generatedBy, time.Now().Format(time.ANSIC),
 		strconv.Quote(vi.Branch), vi.Build,
