@@ -5,30 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/cparta/makeversion"
 )
-
-func checkDir(p string) error {
-	fi, err := os.Stat(p)
-	if err == nil {
-		if fi.IsDir() {
-			return nil
-		}
-		err = fmt.Errorf("'%s' is not a directory", p)
-	}
-	return err
-}
-
-func checkRepoDir(s string) (repo string, err error) {
-	if repo, err = filepath.Abs(s); err == nil {
-		if err = checkDir(repo); err == nil {
-			err = checkDir(path.Join(repo, ".git"))
-		}
-	}
-	return
-}
 
 func writeOutput(fileName, content string) (err error) {
 	f := os.Stdout
@@ -60,12 +39,10 @@ func main() {
 	var vi makeversion.VersionInfo
 	var content string
 
-	if repoDir, err = checkRepoDir(*flagRepo); err == nil {
-		if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
-			if vi, err = vs.GetVersion(repoDir, *flagRelease); err == nil {
-				if content, err = vi.Render(*flagName); err == nil {
-					err = writeOutput(*flagOut, content)
-				}
+	if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
+		if vi, err = vs.GetVersion(repoDir, *flagRelease); err == nil {
+			if content, err = vi.Render(*flagName); err == nil {
+				err = writeOutput(*flagOut, content)
 			}
 		}
 	}
