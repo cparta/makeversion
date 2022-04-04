@@ -37,10 +37,12 @@ func (vi *VersionInfo) Render(pkgName string) (string, error) {
 // branch %s, build %s
 package %s
 
+const PkgName = %s
 const Version = %s
 `,
 		generatedBy, time.Now().Format(time.ANSIC),
 		strconv.Quote(vi.Branch), vi.Build,
 		pkgName,
+		strconv.Quote(pkgName),
 		strconv.QuoteToASCII(vi.Version)), nil
 }
