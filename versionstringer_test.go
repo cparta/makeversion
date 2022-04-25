@@ -163,11 +163,26 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "v1-v1.v1", vi.Version)
 
-	env["CI_COMMIT_REF_NAME"] = "branch"
+	vi, err = vs.GetVersion("", false)
+	assert.NoError(t, err)
+	assert.Equal(t, "v0.0.0", vi.Version)
+
+	env["CI_COMMIT_REF_NAME"] = "HEAD"
+	vi, err = vs.GetVersion("", false)
+	assert.NoError(t, err)
+	assert.Equal(t, "v0.0.0-HEAD", vi.Version)
+
+	delete(env, "CI_COMMIT_REF_NAME")
+	env["GITHUB_RUN_NUMBER"] = "789"
+	vi, err = vs.GetVersion("", false)
+	assert.NoError(t, err)
+	assert.Equal(t, "v0.0.0-789", vi.Version)
+
+	env["CI_COMMIT_REF_NAME"] = "*Branch--.--ONE*-*"
 	env["GITHUB_RUN_NUMBER"] = "789"
 	vi, err = vs.GetVersion("v2.0", false)
 	assert.NoError(t, err)
-	assert.Equal(t, "v2.0-branch.789", vi.Version)
+	assert.Equal(t, "v2.0-branch-one.789", vi.Version)
 
 	vi, err = vs.GetVersion("v3.4.5", true)
 	assert.Error(t, err)

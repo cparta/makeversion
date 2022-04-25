@@ -83,7 +83,9 @@ func (vs *VersionStringer) GetTag(repo string) (tag string, err error) {
 
 // GetBranch returns the current branch as a string suitable
 // for inclusion in the semver text as well as the actual
-// branch name in the build system or Git.
+// branch name in the build system or Git. If no branch name
+// can be found, then "HEAD" is returned if we are running within
+// a Git repo, or an empty string if we're not.
 func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string) {
 	if branchName = strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_REF_NAME")); branchName == "" {
 		if branchName = strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_NAME")); branchName == "" {
@@ -92,15 +94,26 @@ func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string
 	}
 
 	branchText = branchName
-	if branchName != "HEAD" {
-		branchText = strings.ReplaceAll(strings.ToLower(reOnlyWords.ReplaceAllString(branchText, "-")), "--", "-")
+	if branchText != "HEAD" {
+		branchText = reOnlyWords.ReplaceAllString(branchText, "-")
+		for {
+			if newBranchText := strings.ReplaceAll(branchText, "--", "-"); newBranchText != branchText {
+				branchText = newBranchText
+				continue
+			}
+			break
+		}
+		branchText = strings.TrimPrefix(branchText, "-")
+		branchText = strings.TrimSuffix(branchText, "-")
+		branchText = strings.ToLower(branchText)
 	}
 
 	return
 }
 
 // GetBuild returns the build counter. This is taken from the CI system if available,
-// otherwise the Git commit count is used.
+// otherwise the Git commit count is used. Returns an empty string if no reasonable build
+// counter can be found.
 func (vs *VersionStringer) GetBuild(repo string) (build string) {
 	if build = strings.TrimSpace(vs.Env.Getenv("CI_PIPELINE_IID")); build == "" {
 		if build = strings.TrimSpace(vs.Env.Getenv("GITHUB_RUN_NUMBER")); build == "" {
@@ -122,11 +135,16 @@ func (vs *VersionStringer) GetVersion(repo string, forRelease bool) (vi VersionI
 				err = fmt.Errorf("release version must be on default branch, not '%s'\n", branchName)
 			}
 		} else {
-			vi.Version += "-"
-			if branchText != "" {
-				vi.Version += branchText + "."
+			suffix := branchText
+			if vi.Build != "" {
+				if suffix != "" {
+					suffix += "."
+				}
+				suffix += vi.Build
 			}
-			vi.Version += vi.Build
+			if suffix != "" {
+				vi.Version += "-" + suffix
+			}
 		}
 	}
 	return
