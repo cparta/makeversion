@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -42,7 +43,7 @@ const PkgVersion = %s
 `,
 		generatedBy, time.Now().Format(time.ANSIC),
 		strconv.Quote(vi.Branch), vi.Build,
-		pkgName,
+		strings.ToLower(pkgName),
 		strconv.Quote(pkgName),
 		strconv.QuoteToASCII(vi.Version)), nil
 }
