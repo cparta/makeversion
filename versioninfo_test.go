@@ -1,6 +1,7 @@
 package makeversion
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,9 +15,11 @@ func Test_VersionInfo_Render(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, VersionText+"\n", txt)
 
-	txt, err = vi.Render("foo")
+	txt, err = vi.Render("FooBar")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, txt)
+	assert.True(t, strings.Contains(txt, "package foobar"))
+	assert.True(t, strings.Contains(txt, "const PkgName = \"FooBar\""))
 
 	txt, err = vi.Render("123")
 	assert.Error(t, err)
