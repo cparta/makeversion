@@ -4,24 +4,25 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/matryer/is"
 )
 
 func Test_VersionInfo_Render(t *testing.T) {
+	is := is.New(t)
 	const VersionText = "v1.2.3-mybranch.456"
 	vi := &VersionInfo{Version: VersionText}
 
 	txt, err := vi.Render("")
-	assert.NoError(t, err)
-	assert.Equal(t, VersionText+"\n", txt)
+	is.NoErr(err)
+	is.Equal(VersionText+"\n", txt)
 
 	txt, err = vi.Render("FooBar")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, txt)
-	assert.True(t, strings.Contains(txt, "package foobar"))
-	assert.True(t, strings.Contains(txt, "const PkgName = \"FooBar\""))
+	is.NoErr(err)
+	is.True(txt != "")
+	is.True(strings.Contains(txt, "package foobar"))
+	is.True(strings.Contains(txt, "const PkgName = \"FooBar\""))
 
 	txt, err = vi.Render("123")
-	assert.Error(t, err)
-	assert.Empty(t, txt)
+	is.True(err != nil)
+	is.Equal(txt, "")
 }
