@@ -17,6 +17,8 @@ type Gitter interface {
 	GetTag(repo string) string
 	// GetBranch returns the current branch in the repository, or the string "HEAD" if we're in a Git repo, otherwise an empty string.
 	GetBranch(repo string) string
+	// GetBranchFromTag returns the current branch in the repository given a tag, or the string "HEAD" if we're in a Git repo, otherwise an empty string.
+	GetBranchFromTag(repo, tag string) string
 	// GetBuild returns the number of commits in the currently checked out branch as a string, or an empty string
 	GetBuild(repo string) string
 }
@@ -76,6 +78,23 @@ func (dg DefaultGitter) GetTag(repo string) string {
 		}
 	}
 	return ""
+}
+
+func (dg DefaultGitter) GetBranchFromTag(repo, tag string) (branch string) {
+	if repo, _ = CheckGitRepo(repo); repo != "" {
+		branch = "HEAD"
+		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--no-color", "--contains", "tags/"+tag).Output(); len(b) > 0 /* #nosec G204 */ {
+			for _, s := range strings.Split(string(b), "\n") {
+				if s = strings.TrimSpace(s); len(s) > 1 {
+					if s[0] == '*' {
+						branch = strings.TrimSpace(s[1:])
+						break
+					}
+				}
+			}
+		}
+	}
+	return
 }
 
 func (dg DefaultGitter) GetBranch(repo string) (branch string) {

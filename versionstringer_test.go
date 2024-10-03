@@ -29,6 +29,13 @@ func (mg MockGitter) GetBranch(repo string) string {
 	return repo
 }
 
+func (mg MockGitter) GetBranchFromTag(repo, tag string) string {
+	if tag == "v1.0.0" {
+		return "main"
+	}
+	return ""
+}
+
 func (mg MockGitter) GetBuild(repo string) string {
 	return repo
 }
@@ -140,6 +147,19 @@ func Test_VersionStringer_GetBranch(t *testing.T) {
 	is.Equal("github.branch", name)
 	is.Equal("github-branch", text)
 	delete(env, "GITHUB_REF_NAME")
+}
+
+func Test_VersionStringer_GetBranchFromTag(t *testing.T) {
+	is := is.New(t)
+	env := MockEnvironment{}
+	git := MockGitter{}
+	vs := VersionStringer{Git: git, Env: env}
+
+	env["GITHUB_REF_NAME"] = "v1.0.0"
+	env["GITHUB_REF_TYPE"] = "tag"
+	text, name := vs.GetBranch(".")
+	is.Equal("main", name)
+	is.Equal("main", text)
 }
 
 func Test_VersionStringer_GetBuild(t *testing.T) {

@@ -69,6 +69,15 @@ func Test_DefaultGitter_GetBranch(t *testing.T) {
 	is.Equal(dg.GetBranch("/"), "")
 }
 
+func Test_DefaultGitter_GetBranchFromTag(t *testing.T) {
+	is := is.New(t)
+	dg, err := NewDefaultGitter("git")
+	is.NoErr(err)
+	is.True(dg != nil)
+	is.True(dg.GetBranchFromTag(".", "v1.0.0") == "main")
+	is.Equal(dg.GetBranchFromTag("/", "v1.0.0"), "")
+}
+
 func Test_DefaultGitter_GetBuild(t *testing.T) {
 	is := is.New(t)
 	dg, err := NewDefaultGitter("git")
