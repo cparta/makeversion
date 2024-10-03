@@ -83,6 +83,8 @@ func (dg DefaultGitter) GetTag(repo string) string {
 func (dg DefaultGitter) GetBranchFromTag(repo, tag string) (branch string) {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
 		branch = "HEAD"
+		tag = strings.TrimPrefix(tag, "refs/")
+		tag = strings.TrimPrefix(tag, "tags/")
 		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--no-color", "--contains", "tags/"+tag).Output(); len(b) > 0 /* #nosec G204 */ {
 			for _, s := range strings.Split(string(b), "\n") {
 				if s = strings.TrimSpace(s); len(s) > 1 {
