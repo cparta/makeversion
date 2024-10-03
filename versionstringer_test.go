@@ -30,7 +30,7 @@ func (mg MockGitter) GetBranch(repo string) string {
 }
 
 func (mg MockGitter) GetBranchFromTag(repo, tag string) string {
-	if tag == "refs/tags/v1.0.0" {
+	if tag == "v1.0.0" {
 		return "main"
 	}
 	return ""
@@ -156,7 +156,7 @@ func Test_VersionStringer_GetBranchFromTag(t *testing.T) {
 	vs := VersionStringer{Git: git, Env: env}
 
 	env["GITHUB_REF_TYPE"] = "tag"
-	env["GITHUB_REF"] = "refs/tags/v1.0.0"
+	env["GITHUB_REF_NAME"] = "v1.0.0"
 	text, name := vs.GetBranch(".")
 	is.Equal("main", name)
 	is.Equal("main", text)

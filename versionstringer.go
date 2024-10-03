@@ -89,11 +89,9 @@ func (vs *VersionStringer) GetTag(repo string) (tag string, err error) {
 func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string) {
 	if branchName = strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_REF_NAME")); branchName == "" {
 		if branchName = strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_NAME")); branchName == "" {
-			if strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_TYPE")) == "tag" {
-				branchName = vs.Git.GetBranchFromTag(repo, vs.Env.Getenv("GITHUB_REF"))
-			} else {
-				branchName = vs.Git.GetBranch(repo)
-			}
+			branchName = vs.Git.GetBranch(repo)
+		} else if strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_TYPE")) == "tag" {
+			branchName = vs.Git.GetBranchFromTag(repo, branchName)
 		}
 	}
 
