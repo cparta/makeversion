@@ -81,7 +81,7 @@ func (dg DefaultGitter) GetTag(repo string) string {
 func (dg DefaultGitter) GetBranch(repo string) (branch string) {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
 		branch = "HEAD"
-		if b, _ := exec.Command(string(dg), "-C", repo, "rev-parse", "--abbrev-ref", "HEAD").Output(); len(b) > 0 {
+		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--show-current").Output(); len(b) > 0 {
 			branch = strings.TrimSpace(string(b))
 		}
 	}

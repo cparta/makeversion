@@ -34,7 +34,7 @@ func NewVersionStringer(gitBin string) (vs *VersionStringer, err error) {
 // IsEnvTrue returns true if the given environment variable
 // exists and is set to the string "true" (not case sensitive).
 func (vs *VersionStringer) IsEnvTrue(envvar string) bool {
-	return "true" == strings.ToLower(strings.TrimSpace(vs.Env.Getenv(envvar)))
+	return strings.ToLower(strings.TrimSpace(vs.Env.Getenv(envvar))) == "true"
 }
 
 // IsReleaseBranch returns true if the given branch name should
@@ -132,7 +132,7 @@ func (vs *VersionStringer) GetVersion(repo string, forRelease bool) (vi VersionI
 		vi.Branch = branchName
 		if forRelease {
 			if !vs.IsReleaseBranch(branchName) {
-				err = fmt.Errorf("release version must be on default branch, not '%s'\n", branchName)
+				err = fmt.Errorf("release version must be on default branch, not '%s'", branchName)
 			}
 		} else {
 			suffix := branchText
