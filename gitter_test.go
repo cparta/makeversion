@@ -69,6 +69,12 @@ func Test_DefaultGitter_GetBranch(t *testing.T) {
 	is.Equal(dg.GetBranch("/"), "")
 }
 
+func Test_lastName(t *testing.T) {
+	is := is.New(t)
+	is.Equal("foo", lastName("foo"))
+	is.Equal("bar", lastName("foo/bar"))
+}
+
 func Test_DefaultGitter_GetBranchFromTag(t *testing.T) {
 	is := is.New(t)
 	dg, err := NewDefaultGitter("git")

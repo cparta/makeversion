@@ -80,6 +80,13 @@ func (dg DefaultGitter) GetTag(repo string) string {
 	return ""
 }
 
+func lastName(s string) string {
+	if idx := strings.LastIndexByte(s, '/'); idx > -1 {
+		s = s[idx+1:]
+	}
+	return s
+}
+
 func (dg DefaultGitter) GetBranchFromTag(repo, tag string) (branch string) {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
 		branch = "HEAD"
@@ -91,8 +98,8 @@ func (dg DefaultGitter) GetBranchFromTag(repo, tag string) (branch string) {
 					if !strings.Contains(s, "HEAD") {
 						starred := s[0] == '*'
 						s = strings.TrimSpace(strings.TrimPrefix(s, "*"))
-						if !strings.ContainsAny(s, " /") {
-							branch = s
+						if len(s) > 0 && !strings.Contains(s, " ") {
+							branch = lastName(s)
 							if starred {
 								break
 							}
