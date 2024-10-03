@@ -9,24 +9,35 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go:
+          - "1.16"
+          - "1.23"
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.16
+          go-version: ${{ matrix.go }}
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
 
       - name: Build
         run: go build -v ./...
 
       - name: Test
-        run: go test -v ./...
+        run: go test -coverprofile=coverage.txt ./...
 
       - name: actions-goveralls
         uses: shogo82148/actions-goveralls@v1.6.0
+        with:
+          path-to-profile: coverage.txt
 
       - name: Go report card
         uses: creekorful/goreportcard-action@v1.0
