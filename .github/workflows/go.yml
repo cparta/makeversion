@@ -21,6 +21,9 @@ jobs:
       - name: Get tags
         run: git fetch --prune --unshallow
 
+      - name: Show branches by tag
+        run: git branch --all --no-color --contains tags/${GITHUB_REF_NAME} || true
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
