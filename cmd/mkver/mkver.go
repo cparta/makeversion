@@ -13,7 +13,7 @@ func writeOutput(fileName, content string) (err error) {
 	f := os.Stdout
 	if len(fileName) > 0 {
 		fileName = path.Clean(fileName)
-		if f, err = os.Create(fileName); err != nil {
+		if f, err = os.Create(fileName); err != nil /* #nosec G304 */ {
 			return
 		}
 		defer f.Close()
