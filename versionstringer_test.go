@@ -3,6 +3,7 @@
 package makeversion
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/matryer/is"
@@ -29,11 +30,14 @@ func (mg MockGitter) GetBranch(repo string) string {
 	return repo
 }
 
-func (mg MockGitter) GetBranchFromTag(repo, tag string) string {
-	if tag == "v1.0.0" {
-		return "main"
+func (mg MockGitter) GetBranchesFromTag(repo, tag string) (branches []string) {
+	if strings.HasPrefix(tag, "v1.0") {
+		branches = append(branches, "main")
 	}
-	return ""
+	if strings.HasPrefix(tag, "v1") {
+		branches = append(branches, "onepointoh")
+	}
+	return
 }
 
 func (mg MockGitter) GetBuild(repo string) string {
@@ -160,6 +164,11 @@ func Test_VersionStringer_GetBranchFromTag(t *testing.T) {
 	text, name := vs.GetBranch(".")
 	is.Equal("main", name)
 	is.Equal("main", text)
+
+	env["GITHUB_REF_NAME"] = "v1"
+	text, name = vs.GetBranch(".")
+	is.Equal("onepointoh", name)
+	is.Equal("onepointoh", text)
 }
 
 func Test_VersionStringer_GetBuild(t *testing.T) {

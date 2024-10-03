@@ -91,7 +91,11 @@ func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string
 		if branchName = strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_NAME")); branchName == "" {
 			branchName = vs.Git.GetBranch(repo)
 		} else if strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_TYPE")) == "tag" {
-			branchName = vs.Git.GetBranchFromTag(repo, branchName)
+			for _, branchName = range vs.Git.GetBranchesFromTag(repo, branchName) {
+				if vs.IsReleaseBranch(branchName) {
+					break
+				}
+			}
 		}
 	}
 

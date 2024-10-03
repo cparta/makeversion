@@ -17,8 +17,8 @@ type Gitter interface {
 	GetTag(repo string) string
 	// GetBranch returns the current branch in the repository, or the string "HEAD" if we're in a Git repo, otherwise an empty string.
 	GetBranch(repo string) string
-	// GetBranchFromTag returns the current branch in the repository given a tag, or the string "HEAD" if we're in a Git repo, otherwise an empty string.
-	GetBranchFromTag(repo, tag string) string
+	// GetBranchesFromTag returns the non-HEAD branches in the repository that have the tag, otherwise an empty string.
+	GetBranchesFromTag(repo, tag string) []string
 	// GetBuild returns the number of commits in the currently checked out branch as a string, or an empty string
 	GetBuild(repo string) string
 }
@@ -87,9 +87,8 @@ func lastName(s string) string {
 	return s
 }
 
-func (dg DefaultGitter) GetBranchFromTag(repo, tag string) (branch string) {
+func (dg DefaultGitter) GetBranchesFromTag(repo, tag string) (branches []string) {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
-		branch = "HEAD"
 		tag = strings.TrimPrefix(tag, "refs/")
 		tag = strings.TrimPrefix(tag, "tags/")
 		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--all", "--no-color", "--contains", "tags/"+tag).Output(); len(b) > 0 /* #nosec G204 */ {
@@ -99,8 +98,9 @@ func (dg DefaultGitter) GetBranchFromTag(repo, tag string) (branch string) {
 						starred := s[0] == '*'
 						s = strings.TrimSpace(strings.TrimPrefix(s, "*"))
 						if len(s) > 0 && !strings.Contains(s, " ") {
-							branch = lastName(s)
+							branches = append(branches, lastName(s))
 							if starred {
+								branches = branches[len(branches)-1:]
 								break
 							}
 						}

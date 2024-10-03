@@ -80,8 +80,8 @@ func Test_DefaultGitter_GetBranchFromTag(t *testing.T) {
 	dg, err := NewDefaultGitter("git")
 	is.NoErr(err)
 	is.True(dg != nil)
-	is.True(dg.GetBranchFromTag(".", "refs/tags/v1.0.0") == "main")
-	is.Equal(dg.GetBranchFromTag("/", "refs/tags/v1.0.0"), "")
+	is.Equal(dg.GetBranchesFromTag("/", "refs/tags/v1.0.0"), nil)
+	is.Equal(dg.GetBranchesFromTag(".", "refs/tags/v1.0.0"), []string{"main"})
 }
 
 func Test_DefaultGitter_GetBuild(t *testing.T) {
