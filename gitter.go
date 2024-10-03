@@ -71,7 +71,7 @@ func CheckGitRepo(dir string) (repo string, err error) {
 
 func (dg DefaultGitter) GetTag(repo string) string {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
-		if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--tags", "--match", "v[0-9]*", "--abbrev=0").Output(); len(b) > 0 {
+		if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--tags", "--match", "v[0-9]*", "--abbrev=0").Output(); len(b) > 0 /* #nosec G204 */ {
 			return strings.TrimSpace(string(b))
 		}
 	}
@@ -81,7 +81,7 @@ func (dg DefaultGitter) GetTag(repo string) string {
 func (dg DefaultGitter) GetBranch(repo string) (branch string) {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
 		branch = "HEAD"
-		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--show-current").Output(); len(b) > 0 {
+		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--show-current").Output(); len(b) > 0 /* #nosec G204 */ {
 			branch = strings.TrimSpace(string(b))
 		}
 	}
@@ -90,7 +90,7 @@ func (dg DefaultGitter) GetBranch(repo string) (branch string) {
 
 func (dg DefaultGitter) GetBuild(repo string) string {
 	if repo, _ = CheckGitRepo(repo); repo != "" {
-		if b, _ := exec.Command(string(dg), "-C", repo, "rev-list", "HEAD", "--count").Output(); len(b) > 0 {
+		if b, _ := exec.Command(string(dg), "-C", repo, "rev-list", "HEAD", "--count").Output(); len(b) > 0 /* #nosec G204 */ {
 			str := strings.TrimSpace(string(b))
 			if num, err := strconv.Atoi(str); err == nil && num > 0 {
 				return str
