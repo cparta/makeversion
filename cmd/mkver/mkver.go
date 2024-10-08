@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/cparta/makeversion"
+	"github.com/cparta/makeversion/v2"
 )
 
 func writeOutput(fileName, content string) (err error) {

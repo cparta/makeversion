@@ -1,4 +1,4 @@
-module github.com/cparta/makeversion
+module github.com/cparta/makeversion/v2
 
 go 1.16
 
