@@ -81,16 +81,9 @@ func (vs *VersionStringer) GetTag(repo string) (tag string, err error) {
 	return
 }
 
-// GetBranch returns the current branch as a string suitable
-// for inclusion in the semver text as well as the actual
-// branch name in the build system or Git. If no branch name
-// can be found, then "HEAD" is returned if we are running within
-// a Git repo, or an empty string if we're not.
-func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string) {
-	if branchName = strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_REF_NAME")); branchName == "" {
-		if branchName = strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_NAME")); branchName == "" {
-			branchName = vs.Git.GetBranch(repo)
-		} else if strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_TYPE")) == "tag" {
+func (vs *VersionStringer) getBranchGitHub(repo string) (branchName string) {
+	if branchName = strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_NAME")); branchName != "" {
+		if strings.TrimSpace(vs.Env.Getenv("GITHUB_REF_TYPE")) == "tag" {
 			for _, branchName = range vs.Git.GetBranchesFromTag(repo, branchName) {
 				if vs.IsReleaseBranch(branchName) {
 					break
@@ -98,7 +91,33 @@ func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string
 			}
 		}
 	}
+	return
+}
 
+func (vs *VersionStringer) getBranchGitLab(repo string) (branchName string) {
+	if branchName = strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_REF_NAME")); branchName != "" {
+		if strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_TAG")) == branchName {
+			for _, branchName = range vs.Git.GetBranchesFromTag(repo, branchName) {
+				if vs.IsReleaseBranch(branchName) {
+					break
+				}
+			}
+		}
+	}
+	return
+}
+
+// GetBranch returns the current branch as a string suitable
+// for inclusion in the semver text as well as the actual
+// branch name in the build system or Git. If no branch name
+// can be found, then "HEAD" is returned if we are running within
+// a Git repo, or an empty string if we're not.
+func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string) {
+	if branchName = vs.getBranchGitHub(repo); branchName == "" {
+		if branchName = vs.getBranchGitLab(repo); branchName == "" {
+			branchName = vs.Git.GetBranch(repo)
+		}
+	}
 	branchText = branchName
 	if branchText != "HEAD" {
 		branchText = reOnlyWords.ReplaceAllString(branchText, "-")

@@ -153,7 +153,20 @@ func Test_VersionStringer_GetBranch(t *testing.T) {
 	delete(env, "GITHUB_REF_NAME")
 }
 
-func Test_VersionStringer_GetBranchFromTag(t *testing.T) {
+func Test_VersionStringer_GetBranchFromTag_GitLab(t *testing.T) {
+	is := is.New(t)
+	env := MockEnvironment{}
+	git := MockGitter{}
+	vs := VersionStringer{Git: git, Env: env}
+
+	env["CI_COMMIT_TAG"] = "v1.0.0"
+	env["CI_COMMIT_REF_NAME"] = "v1.0.0"
+	text, name := vs.GetBranch(".")
+	is.Equal("main", name)
+	is.Equal("main", text)
+}
+
+func Test_VersionStringer_GetBranchFromTag_GitHub(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
 	git := MockGitter{}
