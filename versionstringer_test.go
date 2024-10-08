@@ -236,7 +236,8 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	is.Equal("v2.0-branch-one.789", vi.Version)
 
 	vi, err = vs.GetVersion("v3.4.5", true)
-	is.True(err != nil)
+	is.NoErr(err)
+	is.Equal("v3.4.5-branch-one.789", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "main"
 	vi, err = vs.GetVersion("v3.4.5", true)

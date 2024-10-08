@@ -27,7 +27,7 @@ var (
 	flagOut     = flag.String("out", "", "file to write to (defaults to stdout)")
 	flagGit     = flag.String("git", "git", "name of Git executable")
 	flagRepo    = flag.String("repo", ".", "repository to examine")
-	flagRelease = flag.Bool("release", false, "output release version without build info suffix")
+	flagRelease = flag.Bool("release", false, "if possible, output version without build info suffix")
 )
 
 func main() {

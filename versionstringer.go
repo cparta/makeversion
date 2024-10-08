@@ -4,6 +4,7 @@ package makeversion
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -156,20 +157,20 @@ func (vs *VersionStringer) GetVersion(repo string, forRelease bool) (vi VersionI
 		branchText, branchName := vs.GetBranch(repo)
 		vi.Branch = branchName
 		if forRelease {
-			if !vs.IsReleaseBranch(branchName) {
-				err = fmt.Errorf("release version must be on default branch, not '%s'", branchName)
+			if vs.IsReleaseBranch(branchName) {
+				return
 			}
-		} else {
-			suffix := branchText
-			if vi.Build != "" {
-				if suffix != "" {
-					suffix += "."
-				}
-				suffix += vi.Build
-			}
+			fmt.Fprintf(os.Stderr, "warning: '%s' is not a release branch\n", branchName)
+		}
+		suffix := branchText
+		if vi.Build != "" {
 			if suffix != "" {
-				vi.Version += "-" + suffix
+				suffix += "."
 			}
+			suffix += vi.Build
+		}
+		if suffix != "" {
+			vi.Version += "-" + suffix
 		}
 	}
 	return
