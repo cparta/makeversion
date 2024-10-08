@@ -216,38 +216,38 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
-	vi, err := vs.GetVersion("v1", false)
+	vi, err := vs.GetVersion("v1")
 	is.NoErr(err)
 	is.Equal("v1-v1.v1", vi.Version)
 
-	vi, err = vs.GetVersion("", false)
+	vi, err = vs.GetVersion("")
 	is.NoErr(err)
 	is.Equal("v0.0.0", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "HEAD"
-	vi, err = vs.GetVersion("", false)
+	vi, err = vs.GetVersion("")
 	is.NoErr(err)
 	is.Equal("v0.0.0-HEAD", vi.Version)
 
 	delete(env, "CI_COMMIT_REF_NAME")
 	env["GITHUB_RUN_NUMBER"] = "789"
-	vi, err = vs.GetVersion("", false)
+	vi, err = vs.GetVersion("")
 	is.NoErr(err)
 	is.Equal("v0.0.0-789", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "*Branch--.--ONE*-*"
 	env["GITHUB_RUN_NUMBER"] = "789"
-	vi, err = vs.GetVersion("v2.0", false)
+	vi, err = vs.GetVersion("v2.0")
 	is.NoErr(err)
 	is.Equal("v2.0-branch-one.789", vi.Version)
 
-	vi, err = vs.GetVersion("v3.4.5", true)
+	vi, err = vs.GetVersion("v3.4.5")
 	is.NoErr(err)
 	is.Equal("v3.4.5-branch-one.789", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "main"
 	git.TopTag = "v3.4.5"
-	vi, err = vs.GetVersion("v3.4.5", true)
+	vi, err = vs.GetVersion("v3.4.5")
 	is.NoErr(err)
 	is.Equal("v3.4.5", vi.Version)
 }

@@ -23,11 +23,10 @@ func writeOutput(fileName, content string) (err error) {
 }
 
 var (
-	flagName    = flag.String("name", "", "write Go source with given package name")
-	flagOut     = flag.String("out", "", "file to write to (defaults to stdout)")
-	flagGit     = flag.String("git", "git", "name of Git executable")
-	flagRepo    = flag.String("repo", ".", "repository to examine")
-	flagRelease = flag.Bool("release", false, "if possible, output version without build info suffix")
+	flagName = flag.String("name", "", "write Go source with given package name")
+	flagOut  = flag.String("out", "", "file to write to (defaults to stdout)")
+	flagGit  = flag.String("git", "git", "name of Git executable")
+	flagRepo = flag.String("repo", ".", "repository to examine")
 )
 
 func main() {
@@ -45,7 +44,7 @@ func main() {
 	}
 
 	if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
-		if vi, err = vs.GetVersion(repoDir, *flagRelease); err == nil {
+		if vi, err = vs.GetVersion(repoDir); err == nil {
 			if content, err = vi.Render(*flagName); err == nil {
 				err = writeOutput(*flagOut, content)
 			}

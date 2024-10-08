@@ -149,7 +149,7 @@ func (vs *VersionStringer) GetBuild(repo string) (build string) {
 }
 
 // GetVersion returns a version string for the source code in the Git repository.
-func (vs *VersionStringer) GetVersion(repo string, forRelease bool) (vi VersionInfo, err error) {
+func (vs *VersionStringer) GetVersion(repo string) (vi VersionInfo, err error) {
 	if vi.Tag, err = vs.GetTag(repo); err == nil {
 		vi.Version = vi.Tag
 		vi.Build = vs.GetBuild(repo)

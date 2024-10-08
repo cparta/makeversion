@@ -2,6 +2,7 @@ package makeversion
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/matryer/is"
@@ -82,6 +83,19 @@ func Test_DefaultGitter_GetBranchFromTag(t *testing.T) {
 	is.True(dg != nil)
 	is.Equal(dg.GetBranchesFromTag("/", "refs/tags/v1.0.0"), nil)
 	is.Equal(dg.GetBranchesFromTag(".", "refs/tags/v1.0.0"), []string{"main"})
+}
+
+func Test_DefaultGitter_GetTagForHEAD(t *testing.T) {
+	is := is.New(t)
+	dg, err := NewDefaultGitter("git")
+	is.NoErr(err)
+	is.True(dg != nil)
+	err = exec.Command("git", "tag", "test-tag").Run()
+	is.NoErr(err)
+	if err == nil {
+		defer exec.Command("git", "tag", "-d", "test-tag").Run()
+		is.Equal(dg.GetTagForHEAD("."), "test-tag")
+	}
 }
 
 func Test_DefaultGitter_GetBuild(t *testing.T) {
