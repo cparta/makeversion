@@ -20,7 +20,9 @@ func (me MockEnvironment) LookupEnv(key string) (val string, ok bool) {
 	return
 }
 
-type MockGitter struct{}
+type MockGitter struct {
+	TopTag string
+}
 
 func (mg MockGitter) GetTag(repo string) string {
 	return repo
@@ -42,6 +44,10 @@ func (mg MockGitter) GetBranchesFromTag(repo, tag string) (branches []string) {
 
 func (mg MockGitter) GetBuild(repo string) string {
 	return repo
+}
+
+func (mg MockGitter) GetTagForHEAD(repo string) string {
+	return mg.TopTag
 }
 
 func Test_NewVersionStringer_SucceedsNormally(t *testing.T) {
@@ -207,7 +213,7 @@ func Test_VersionStringer_GetBuild(t *testing.T) {
 func Test_VersionStringer_GetVersion(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
-	git := MockGitter{}
+	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
 	vi, err := vs.GetVersion("v1", false)
@@ -240,6 +246,7 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	is.Equal("v3.4.5-branch-one.789", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "main"
+	git.TopTag = "v3.4.5"
 	vi, err = vs.GetVersion("v3.4.5", true)
 	is.NoErr(err)
 	is.Equal("v3.4.5", vi.Version)

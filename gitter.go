@@ -21,6 +21,8 @@ type Gitter interface {
 	GetBranchesFromTag(repo, tag string) []string
 	// GetBuild returns the number of commits in the currently checked out branch as a string, or an empty string
 	GetBuild(repo string) string
+	// GetTagForHEAD returns the tag that exactly match the current HEAD, or an empty string
+	GetTagForHEAD(repo string) string
 }
 
 type DefaultGitter string
@@ -106,6 +108,17 @@ func (dg DefaultGitter) GetBranchesFromTag(repo, tag string) (branches []string)
 						}
 					}
 				}
+			}
+		}
+	}
+	return
+}
+
+func (dg DefaultGitter) GetTagForHEAD(repo string) (tag string) {
+	if repo, _ = CheckGitRepo(repo); repo != "" {
+		if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--exact-match", "--tags", "HEAD").Output(); len(b) > 0 /* #nosec G204 */ {
+			if s := strings.TrimSpace(string(b)); len(s) > 1 {
+				tag = s
 			}
 		}
 	}
