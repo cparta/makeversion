@@ -9,5 +9,6 @@
 *.gen.go
 go.work
 
+.vscode/
 /mkver
 /coverage.txt
