@@ -18,16 +18,16 @@ func writeOutput(fileName, content string) (err error) {
 		}
 		defer f.Close()
 	}
-	fmt.Println(fileName, content)
 	_, err = f.WriteString(content)
 	return
 }
 
 var (
-	flagName = flag.String("name", "", "write Go source with given package name")
-	flagRepo = flag.String("repo", ".", "repository to examine")
-	flagOut  = flag.String("out", "", "file path relative to repo to write to (defaults to stdout)")
-	flagGit  = flag.String("git", "git", "name of Git executable")
+	flagName  = flag.String("name", "", "write Go source with given package name")
+	flagRepo  = flag.String("repo", "", "repository to examine")
+	flagOut   = flag.String("out", "", "file path relative to repo to write to (defaults to stdout)")
+	flagGit   = flag.String("git", "git", "name of Git executable")
+	flagFetch = flag.Bool("fetch", false, "fetch remote tags")
 )
 
 func main() {
@@ -39,23 +39,33 @@ func main() {
 	var vi makeversion.VersionInfo
 	var content string
 
-	repoDir = os.ExpandEnv(*flagRepo)
-	if repoDir, err = makeversion.CheckGitRepo(repoDir); err != nil {
-		repoDir = *flagRepo
-		fmt.Fprintf(os.Stderr, "warning: '%s' is not a git repository\n", repoDir)
+	if repoDir = os.ExpandEnv(*flagRepo); repoDir == "" {
+		if repoDir = flag.Arg(0); repoDir == "" {
+			repoDir = "."
+		}
 	}
 
-	if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
-		if vi, err = vs.GetVersion(repoDir); err == nil {
-			if content, err = vi.Render(*flagName); err == nil {
-				outpath := path.Join(repoDir, os.ExpandEnv(*flagOut))
-				err = writeOutput(outpath, content)
+	if repoDir, err = makeversion.CheckGitRepo(repoDir); err == nil {
+		if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
+			if *flagFetch {
+				err = vs.Git.FetchTags(repoDir)
+			}
+			if err == nil {
+				if vi, err = vs.GetVersion(repoDir); err == nil {
+					if content, err = vi.Render(*flagName); err == nil {
+						outpath := os.ExpandEnv(*flagOut)
+						if outpath != "" {
+							outpath = path.Join(repoDir, outpath)
+						}
+						err = writeOutput(outpath, content)
+					}
+				}
 			}
 		}
 	}
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		fmt.Fprintf(os.Stderr, "%q: %v\n", repoDir, err.Error())
 		os.Exit(1)
 	}
 }

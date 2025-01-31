@@ -3,13 +3,12 @@
 package makeversion
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
 
 var (
-	reCheckTag  = regexp.MustCompile(`^v\d+(\.\d+(\.\d+)?)?$`)
+	// reCheckTag  = regexp.MustCompile(`^v\d+(\.\d+(\.\d+)?)?$`)
 	reOnlyWords = regexp.MustCompile(`[^\w]`)
 )
 
@@ -68,17 +67,26 @@ func (vs *VersionStringer) IsReleaseBranch(branchName string) bool {
 	return false
 }
 
-// GetTag returns the git version tag. Returns an error if the tag is not in the form "vX.Y.Z".
-func (vs *VersionStringer) GetTag(repo string) (tag string, err error) {
-	if tag = strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_TAG")); tag == "" {
-		if tag = vs.Git.GetTag(repo); tag == "" {
-			tag = "v0.0.0"
+// GetTag returns the semver git version tag matching the current tree, or
+// the latest semver tag if none match.
+func (vs *VersionStringer) GetTag(repo string) (string, bool) {
+	if tag := strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_TAG")); tag != "" {
+		return tag, true
+	}
+	if currtreehash := vs.Git.GetCurrentTreeHash(repo); currtreehash != "" {
+		if tag := vs.Git.GetClosestTag(repo, "HEAD"); tag != "" {
+			if tagtreehash := vs.Git.GetTreeHash(repo, tag); tagtreehash == currtreehash {
+				return tag, true
+			}
+			for _, testtag := range vs.Git.GetTags(repo) {
+				if tagtreehash := vs.Git.GetTreeHash(repo, testtag); tagtreehash == currtreehash {
+					return testtag, true
+				}
+			}
+			return tag, false
 		}
 	}
-	if !reCheckTag.MatchString(tag) {
-		err = fmt.Errorf("tag doesn't match 'vN(.N(.N))': '%s'", tag)
-	}
-	return
+	return "v0.0.0", false
 }
 
 func (vs *VersionStringer) getBranchGitHub(repo string) (branchName string) {
@@ -150,13 +158,14 @@ func (vs *VersionStringer) GetBuild(repo string) (build string) {
 
 // GetVersion returns a version string for the source code in the Git repository.
 func (vs *VersionStringer) GetVersion(repo string) (vi VersionInfo, err error) {
-	if vi.Tag, err = vs.GetTag(repo); err == nil {
+	var sametree bool
+	if vi.Tag, sametree = vs.GetTag(repo); vi.Tag != "" {
 		vi.Version = vi.Tag
 		vi.Build = vs.GetBuild(repo)
 		branchText, branchName := vs.GetBranch(repo)
 		vi.Branch = branchName
 
-		if vs.IsReleaseBranch(branchName) && vs.Git.GetTagForHEAD(repo) == vi.Tag {
+		if vs.IsReleaseBranch(branchName) && sametree {
 			return
 		}
 
