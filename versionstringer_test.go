@@ -3,52 +3,10 @@
 package makeversion
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/matryer/is"
 )
-
-type MockEnvironment map[string]string
-
-func (me MockEnvironment) Getenv(key string) string {
-	return me[key]
-}
-
-func (me MockEnvironment) LookupEnv(key string) (val string, ok bool) {
-	val, ok = me[key]
-	return
-}
-
-type MockGitter struct {
-	TopTag string
-}
-
-func (mg MockGitter) GetTag(repo string) string {
-	return repo
-}
-
-func (mg MockGitter) GetBranch(repo string) string {
-	return repo
-}
-
-func (mg MockGitter) GetBranchesFromTag(repo, tag string) (branches []string) {
-	if strings.HasPrefix(tag, "v1.0") {
-		branches = append(branches, "main")
-	}
-	if strings.HasPrefix(tag, "v1") {
-		branches = append(branches, "onepointoh")
-	}
-	return
-}
-
-func (mg MockGitter) GetBuild(repo string) string {
-	return repo
-}
-
-func (mg MockGitter) GetTagForHEAD(repo string) string {
-	return mg.TopTag
-}
 
 func Test_NewVersionStringer_SucceedsNormally(t *testing.T) {
 	is := is.New(t)
@@ -111,49 +69,56 @@ func Test_VersionStringer_IsReleaseBranch(t *testing.T) {
 func Test_VersionStringer_GetTag(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
-	git := MockGitter{}
+	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
-	tag, err := vs.GetTag("")
-	is.NoErr(err)
+	var tag string
+	var sametree bool
+
+	tag, sametree = vs.GetTag("")
 	is.Equal("v0.0.0", tag)
+	is.Equal(false, sametree)
 
-	tag, err = vs.GetTag("v1.2.3")
-	is.NoErr(err)
-	is.Equal("v1.2.3", tag)
+	tag, sametree = vs.GetTag(".")
+	is.Equal("v6.0.0", tag)
+	is.Equal(false, sametree)
 
-	tag, err = vs.GetTag("foo")
-	is.True(err != nil)
-	is.Equal("foo", tag)
+	git.treehash = "tree-4"
+	tag, sametree = vs.GetTag(".")
+	is.Equal("v4.0.0", tag)
+	is.Equal(true, sametree)
 
+	git.treehash = ""
 	env["CI_COMMIT_TAG"] = "v3"
-	tag, err = vs.GetTag("")
-	is.NoErr(err)
+	tag, sametree = vs.GetTag(".")
 	is.Equal("v3", tag)
+	is.Equal(true, sametree)
 }
 
 func Test_VersionStringer_GetBranch(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
-	git := MockGitter{}
+	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
-	text, name := vs.GetBranch("branch")
-	is.Equal("branch", name)
-	is.Equal("branch", text)
+	git.branch = "zomg"
+	text, name := vs.GetBranch(".")
+	is.Equal("zomg", text)
+	is.Equal("zomg", name)
 
-	text, name = vs.GetBranch("branch.with..dots")
-	is.Equal("branch.with..dots", name)
+	git.branch = "branch.with..dots"
+	text, name = vs.GetBranch(".")
 	is.Equal("branch-with-dots", text)
+	is.Equal("branch.with..dots", name)
 
-	env["CI_COMMIT_REF_NAME"] = "gitlab-branch"
-	text, name = vs.GetBranch("")
-	is.Equal("gitlab-branch", name)
+	env["CI_COMMIT_REF_NAME"] = "gitlab---branch"
+	text, name = vs.GetBranch(".")
 	is.Equal("gitlab-branch", text)
+	is.Equal("gitlab---branch", name)
 	delete(env, "CI_COMMIT_REF_NAME")
 
 	env["GITHUB_REF_NAME"] = "github.branch"
-	text, name = vs.GetBranch("")
+	text, name = vs.GetBranch(".")
 	is.Equal("github.branch", name)
 	is.Equal("github-branch", text)
 	delete(env, "GITHUB_REF_NAME")
@@ -162,7 +127,7 @@ func Test_VersionStringer_GetBranch(t *testing.T) {
 func Test_VersionStringer_GetBranchFromTag_GitLab(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
-	git := MockGitter{}
+	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
 	env["CI_COMMIT_TAG"] = "v1.0.0"
@@ -175,7 +140,7 @@ func Test_VersionStringer_GetBranchFromTag_GitLab(t *testing.T) {
 func Test_VersionStringer_GetBranchFromTag_GitHub(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
-	git := MockGitter{}
+	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
 	env["GITHUB_REF_TYPE"] = "tag"
@@ -193,19 +158,19 @@ func Test_VersionStringer_GetBranchFromTag_GitHub(t *testing.T) {
 func Test_VersionStringer_GetBuild(t *testing.T) {
 	is := is.New(t)
 	env := MockEnvironment{}
-	git := MockGitter{}
+	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
-	build := vs.GetBuild("123")
-	is.Equal("123", build)
+	build := vs.GetBuild(".")
+	is.Equal("build", build)
 
 	env["CI_PIPELINE_IID"] = "456"
-	build = vs.GetBuild("")
+	build = vs.GetBuild(".")
 	is.Equal("456", build)
 	delete(env, "CI_PIPELINE_IID")
 
 	env["GITHUB_RUN_NUMBER"] = "789"
-	build = vs.GetBuild("345")
+	build = vs.GetBuild(".")
 	is.Equal("789", build)
 	delete(env, "CI_PIPELINE_IID")
 }
@@ -216,38 +181,39 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
-	vi, err := vs.GetVersion("v1")
-	is.NoErr(err)
-	is.Equal("v1-v1.v1", vi.Version)
-
-	vi, err = vs.GetVersion("")
+	vi, err := vs.GetVersion("") // invalid repo
 	is.NoErr(err)
 	is.Equal("v0.0.0", vi.Version)
 
-	env["CI_COMMIT_REF_NAME"] = "HEAD"
-	vi, err = vs.GetVersion("")
+	vi, err = vs.GetVersion(".")
 	is.NoErr(err)
-	is.Equal("v0.0.0-HEAD", vi.Version)
+	is.Equal("v6.0.0-main.build", vi.Version)
+
+	git.treehash = "tree-6"
+	vi, err = vs.GetVersion(".")
+	is.NoErr(err)
+	is.Equal("v6.0.0", vi.Version)
+
+	git.treehash = ""
+	env["CI_COMMIT_REF_NAME"] = "HEAD"
+	vi, err = vs.GetVersion(".")
+	is.NoErr(err)
+	is.Equal("v6.0.0-HEAD.build", vi.Version)
 
 	delete(env, "CI_COMMIT_REF_NAME")
 	env["GITHUB_RUN_NUMBER"] = "789"
-	vi, err = vs.GetVersion("")
+	vi, err = vs.GetVersion(".")
 	is.NoErr(err)
-	is.Equal("v0.0.0-789", vi.Version)
+	is.Equal("v6.0.0-main.789", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "*Branch--.--ONE*-*"
 	env["GITHUB_RUN_NUMBER"] = "789"
-	vi, err = vs.GetVersion("v2.0")
+	vi, err = vs.GetVersion(".")
 	is.NoErr(err)
-	is.Equal("v2.0-branch-one.789", vi.Version)
-
-	vi, err = vs.GetVersion("v3.4.5")
-	is.NoErr(err)
-	is.Equal("v3.4.5-branch-one.789", vi.Version)
+	is.Equal("v6.0.0-branch-one.789", vi.Version)
 
 	env["CI_COMMIT_REF_NAME"] = "main"
-	git.TopTag = "v3.4.5"
-	vi, err = vs.GetVersion("v3.4.5")
+	vi, err = vs.GetVersion(".")
 	is.NoErr(err)
-	is.Equal("v3.4.5", vi.Version)
+	is.Equal("v6.0.0-main.789", vi.Version)
 }

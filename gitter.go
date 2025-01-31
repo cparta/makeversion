@@ -13,16 +13,24 @@ import (
 
 // Gitter is an interface exposing the required Git functionality
 type Gitter interface {
-	// GetTag returns the latest Git tag that starts with a lowercase 'v' followed by a number, otherwise an empty string.
-	GetTag(repo string) string
+	// GetCommits returns all commit hashes.
+	GetCommits(repo string) (commits []string)
+	// GetTags returns all tags, sorted by date descending.
+	GetTags(repo string) (tags []string)
+	// GetCurrentTreeHash returns the current tree hash.
+	GetCurrentTreeHash(repo string) string
+	// GetTreeHash returns the tree hash for the given tag or commit.
+	GetTreeHash(repo, tag string) string
+	// GetClosestTag returns the closest tag for the given commit hash (or HEAD).
+	GetClosestTag(repo, commit string) (tag string)
 	// GetBranch returns the current branch in the repository, or the string "HEAD" if we're in a Git repo, otherwise an empty string.
 	GetBranch(repo string) string
 	// GetBranchesFromTag returns the non-HEAD branches in the repository that have the tag, otherwise an empty string.
 	GetBranchesFromTag(repo, tag string) []string
 	// GetBuild returns the number of commits in the currently checked out branch as a string, or an empty string
 	GetBuild(repo string) string
-	// GetTagForHEAD returns the tag that exactly match the current HEAD, or an empty string
-	GetTagForHEAD(repo string) string
+	// FetchTags calls "git fetch --tags"
+	FetchTags(repo string) error
 }
 
 type DefaultGitter string
@@ -67,15 +75,71 @@ func CheckGitRepo(dir string) (repo string, err error) {
 		if err = checkDir(dir); err == nil {
 			if repo = dirOrParentHasGitSubdir(dir); repo == "" {
 				err = errors.New("can't find .git directory")
+				repo = dir
 			}
 		}
 	}
 	return
 }
 
-func (dg DefaultGitter) GetTag(repo string) string {
-	if repo, _ = CheckGitRepo(repo); repo != "" {
-		if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--tags", "--match", "v[0-9]*", "--abbrev=0").Output(); len(b) > 0 /* #nosec G204 */ {
+// GetCommits returns all commit hashes.
+func (dg DefaultGitter) GetCommits(repo string) (commits []string) {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
+		if b, _ := exec.Command(string(dg), "-C", repo, "rev-list", "--all").Output(); len(b) > 0 /* #nosec G204 */ {
+			for _, commit := range strings.Split(string(b), "\n") {
+				if commit = strings.TrimSpace(commit); len(commit) > 1 {
+					commits = append(commits, commit)
+				}
+			}
+		}
+	}
+	return
+}
+
+// GetTags returns all tags, sorted by date descending.
+// The latest tag is the first in the list.
+func (dg DefaultGitter) GetTags(repo string) (tags []string) {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
+		if b, _ := exec.Command(string(dg), "-C", repo, "tag", "--sort=-creatordate").Output(); len(b) > 0 /* #nosec G204 */ {
+			for _, tag := range strings.Split(string(b), "\n") {
+				if tag = strings.TrimSpace(tag); len(tag) > 1 {
+					tags = append(tags, tag)
+				}
+			}
+		}
+	}
+	return
+}
+
+// GetCurrentTreeHash returns the current tree hash.
+func (dg DefaultGitter) GetCurrentTreeHash(repo string) string {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
+		if b, _ := exec.Command(string(dg), "-C", repo, "write-tree").Output(); len(b) > 0 /* #nosec G204 */ {
+			return strings.TrimSpace(string(b))
+		}
+	}
+	return ""
+}
+
+// GetTagTreeHash returns the tree hash for the given tag or commit hash.
+func (dg DefaultGitter) GetTreeHash(repo, tag string) string {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
+		if b, _ := exec.Command(string(dg), "-C", repo, "rev-parse", tag+"^{tree}").Output(); len(b) > 0 /* #nosec G204 */ {
+			return strings.TrimSpace(string(b))
+		}
+	}
+	return ""
+}
+
+// GetClosestTag returns the closest semver tag for the given commit hash.
+func (dg DefaultGitter) GetClosestTag(repo, commit string) (tag string) {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
+		if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--tags", "--match=v[0-9]*", "--abbrev=0", commit).Output(); len(b) > 0 /* #nosec G204 */ {
 			return strings.TrimSpace(string(b))
 		}
 	}
@@ -90,7 +154,8 @@ func lastName(s string) string {
 }
 
 func (dg DefaultGitter) GetBranchesFromTag(repo, tag string) (branches []string) {
-	if repo, _ = CheckGitRepo(repo); repo != "" {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
 		tag = strings.TrimPrefix(tag, "refs/")
 		tag = strings.TrimPrefix(tag, "tags/")
 		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--all", "--no-color", "--contains", "tags/"+tag).Output(); len(b) > 0 /* #nosec G204 */ {
@@ -114,19 +179,9 @@ func (dg DefaultGitter) GetBranchesFromTag(repo, tag string) (branches []string)
 	return
 }
 
-func (dg DefaultGitter) GetTagForHEAD(repo string) (tag string) {
-	if repo, _ = CheckGitRepo(repo); repo != "" {
-		if b, _ := exec.Command(string(dg), "-C", repo, "describe", "--exact-match", "--tags", "HEAD").Output(); len(b) > 0 /* #nosec G204 */ {
-			if s := strings.TrimSpace(string(b)); len(s) > 1 {
-				tag = s
-			}
-		}
-	}
-	return
-}
-
 func (dg DefaultGitter) GetBranch(repo string) (branch string) {
-	if repo, _ = CheckGitRepo(repo); repo != "" {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
 		branch = "HEAD"
 		if b, _ := exec.Command(string(dg), "-C", repo, "branch", "--show-current").Output(); len(b) > 0 /* #nosec G204 */ {
 			branch = strings.TrimSpace(string(b))
@@ -136,7 +191,8 @@ func (dg DefaultGitter) GetBranch(repo string) (branch string) {
 }
 
 func (dg DefaultGitter) GetBuild(repo string) string {
-	if repo, _ = CheckGitRepo(repo); repo != "" {
+	var err error
+	if repo, err = CheckGitRepo(repo); err == nil {
 		if b, _ := exec.Command(string(dg), "-C", repo, "rev-list", "HEAD", "--count").Output(); len(b) > 0 /* #nosec G204 */ {
 			str := strings.TrimSpace(string(b))
 			if num, err := strconv.Atoi(str); err == nil && num > 0 {
@@ -145,4 +201,11 @@ func (dg DefaultGitter) GetBuild(repo string) string {
 		}
 	}
 	return ""
+}
+
+func (dg DefaultGitter) FetchTags(repo string) (err error) {
+	if repo, err = CheckGitRepo(repo); err == nil {
+		err = exec.Command(string(dg), "-C", repo, "fetch", "--tags").Run() /* #nosec G204 */
+	}
+	return
 }
