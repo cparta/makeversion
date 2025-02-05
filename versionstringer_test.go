@@ -75,7 +75,7 @@ func Test_VersionStringer_GetTag(t *testing.T) {
 	var tag string
 	var sametree bool
 
-	tag, sametree = vs.GetTag("")
+	tag, sametree = vs.GetTag("/")
 	is.Equal("v0.0.0", tag)
 	is.Equal(false, sametree)
 
@@ -181,7 +181,7 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	git := &MockGitter{}
 	vs := VersionStringer{Git: git, Env: env}
 
-	vi, err := vs.GetVersion("") // invalid repo
+	vi, err := vs.GetVersion("/") // invalid repo
 	is.NoErr(err)
 	is.Equal("v0.0.0", vi.Version)
 
@@ -198,7 +198,7 @@ func Test_VersionStringer_GetVersion(t *testing.T) {
 	env["CI_COMMIT_REF_NAME"] = "HEAD"
 	vi, err = vs.GetVersion(".")
 	is.NoErr(err)
-	is.Equal("v6.0.0-HEAD.build", vi.Version)
+	is.Equal("v6.0.0-head.build", vi.Version)
 
 	delete(env, "CI_COMMIT_REF_NAME")
 	env["GITHUB_RUN_NUMBER"] = "789"

@@ -2,7 +2,10 @@
 
 package makeversion
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 type MockEnvironment map[string]string
 
@@ -37,8 +40,15 @@ type MockGitter struct {
 	TopTag   string
 }
 
+func (mg *MockGitter) CheckGitRepo(dir string) (repo string, err error) {
+	if dir == "." {
+		return ".", nil
+	}
+	return dir, os.ErrNotExist
+}
+
 func (mg *MockGitter) GetCommits(repo string) (commits []string) {
-	if repo != "" {
+	if repo == "." {
 		for _, h := range mockHistory {
 			commits = append(commits, h.commithash)
 		}
@@ -47,7 +57,7 @@ func (mg *MockGitter) GetCommits(repo string) (commits []string) {
 }
 
 func (mg *MockGitter) GetTags(repo string) (tags []string) {
-	if repo != "" {
+	if repo == "." {
 		for _, h := range mockHistory {
 			if h.tag != "" {
 				tags = append(tags, h.tag)
@@ -58,7 +68,7 @@ func (mg *MockGitter) GetTags(repo string) (tags []string) {
 }
 
 func (mg *MockGitter) GetCurrentTreeHash(repo string) string {
-	if repo != "" {
+	if repo == "." {
 		if mg.treehash == "" {
 			return "tree-HEAD"
 		}
@@ -68,7 +78,7 @@ func (mg *MockGitter) GetCurrentTreeHash(repo string) string {
 }
 
 func (mg *MockGitter) GetTreeHash(repo, tag string) string {
-	if repo != "" {
+	if repo == "." {
 		for _, h := range mockHistory {
 			if h.commithash == tag || h.tag == tag {
 				return h.treehash
@@ -79,7 +89,7 @@ func (mg *MockGitter) GetTreeHash(repo, tag string) string {
 }
 
 func (mg *MockGitter) GetClosestTag(repo, commit string) (tag string) {
-	if repo != "" {
+	if repo == "." {
 		for i := range mockHistory {
 			if mockHistory[i].commithash == commit {
 				for i < len(mockHistory) {
@@ -95,7 +105,7 @@ func (mg *MockGitter) GetClosestTag(repo, commit string) (tag string) {
 }
 
 func (mg *MockGitter) GetBranch(repo string) string {
-	if repo != "" {
+	if repo == "." {
 		if mg.branch == "" {
 			return "main"
 		}
@@ -115,7 +125,7 @@ func (mg *MockGitter) GetBranchesFromTag(repo, tag string) (branches []string) {
 }
 
 func (mg *MockGitter) GetBuild(repo string) string {
-	if repo != "" {
+	if repo == "." {
 		return "build"
 	}
 	return ""

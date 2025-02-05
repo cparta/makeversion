@@ -56,6 +56,8 @@ func (vs *VersionStringer) IsReleaseBranch(branchName string) bool {
 
 	// Fallback to common default branch names.
 	switch branchName {
+	case "": // this is the case for a detached HEAD
+		return true
 	case "default":
 		return true
 	case "master":
@@ -73,16 +75,15 @@ func (vs *VersionStringer) GetTag(repo string) (string, bool) {
 	if tag := strings.TrimSpace(vs.Env.Getenv("CI_COMMIT_TAG")); tag != "" {
 		return tag, true
 	}
-	if currtreehash := vs.Git.GetCurrentTreeHash(repo); currtreehash != "" {
-		if tag := vs.Git.GetClosestTag(repo, "HEAD"); tag != "" {
-			if tagtreehash := vs.Git.GetTreeHash(repo, tag); tagtreehash == currtreehash {
-				return tag, true
-			}
+	if repo, err := vs.Git.CheckGitRepo(repo); err == nil {
+		if currtreehash := vs.Git.GetCurrentTreeHash(repo); currtreehash != "" {
 			for _, testtag := range vs.Git.GetTags(repo) {
-				if tagtreehash := vs.Git.GetTreeHash(repo, testtag); tagtreehash == currtreehash {
+				if vs.Git.GetTreeHash(repo, testtag) == currtreehash {
 					return testtag, true
 				}
 			}
+		}
+		if tag := vs.Git.GetClosestTag(repo, "HEAD"); tag != "" {
 			return tag, false
 		}
 	}
@@ -127,7 +128,7 @@ func (vs *VersionStringer) GetBranch(repo string) (branchText, branchName string
 		}
 	}
 	branchText = branchName
-	if branchText != "HEAD" {
+	if branchText != "" {
 		branchText = reOnlyWords.ReplaceAllString(branchText, "-")
 		for {
 			if newBranchText := strings.ReplaceAll(branchText, "--", "-"); newBranchText != branchText {

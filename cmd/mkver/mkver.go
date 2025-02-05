@@ -45,8 +45,8 @@ func main() {
 		}
 	}
 
-	if repoDir, err = makeversion.CheckGitRepo(repoDir); err == nil {
-		if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
+	if vs, err = makeversion.NewVersionStringer(*flagGit); err == nil {
+		if repoDir, err = vs.Git.CheckGitRepo(repoDir); err == nil {
 			if *flagFetch {
 				err = vs.Git.FetchTags(repoDir)
 			}

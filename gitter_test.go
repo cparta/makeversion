@@ -14,23 +14,29 @@ func Test_NewDefaultGitter_SucceedsNormally(t *testing.T) {
 	is.True(dg != nil)
 }
 
-func Test_CheckGitRepo_SuceedsForCurrent(t *testing.T) {
+func Test_CheckGitRepo_SucceedsForCurrent(t *testing.T) {
 	is := is.New(t)
-	repo, err := CheckGitRepo(".")
+	dg, err := NewDefaultGitter("git")
+	is.NoErr(err)
+	repo, err := dg.CheckGitRepo(".")
 	is.NoErr(err)
 	is.True(repo != "")
 }
 
 func Test_CheckGitRepo_SuceedsForCmdMkver(t *testing.T) {
 	is := is.New(t)
-	repo, err := CheckGitRepo("./cmd/mkver")
+	dg, err := NewDefaultGitter("git")
+	is.NoErr(err)
+	repo, err := dg.CheckGitRepo("./cmd/mkver")
 	is.NoErr(err)
 	is.True(repo != "")
 }
 
 func Test_CheckGitRepo_FailsForRoot(t *testing.T) {
 	is := is.New(t)
-	repo, err := CheckGitRepo("/")
+	dg, err := NewDefaultGitter("git")
+	is.NoErr(err)
+	repo, err := dg.CheckGitRepo("/")
 	is.True(repo == "/")
 	is.True(err != nil)
 }
@@ -42,7 +48,9 @@ func Test_CheckGitRepo_IgnoresFileNamedGit(t *testing.T) {
 		if f, err := os.Create(fileNamedGit); err == nil {
 			defer f.Close()
 			defer os.Remove(fileNamedGit)
-			repo, err := CheckGitRepo("./cmd/mkver")
+			dg, err := NewDefaultGitter("git")
+			is.NoErr(err)
+			repo, err := dg.CheckGitRepo("./cmd/mkver")
 			is.NoErr(err)
 			is.True(repo != "")
 		}
